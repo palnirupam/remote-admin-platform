@@ -1,6 +1,6 @@
-# 🚀 Remote Admin Platform
-
 <div align="center">
+
+# 🚀 Remote Admin Platform
 
 ![Python Version](https://img.shields.io/badge/python-3.7%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
