@@ -44,6 +44,7 @@ Remote Admin Platform is a comprehensive client-server remote administration sys
 | ⌨️ **Keylogger** | Background keyboard event recording with window context tracking |
 | 💻 **Command Execution** | Remote shell command execution with timeout and output capture |
 | 📊 **System Information** | Comprehensive hardware, software, and network information collection |
+| 🔔 **Notifications** | Send popup messages from server to client screen (Windows/Linux/macOS) |
 | 🔄 **Persistence** | Multiple auto-start mechanisms (registry, scheduled tasks, cron, systemd) |
 | 🛡️ **Anti-Removal** | Process protection, file attribute protection, watchdog monitoring |
 
@@ -88,8 +89,8 @@ python setup_environment.py
 ### Quick Test
 
 ```bash
-# Start the enhanced server
-python -m remote_system.enhanced_server.enhanced_server
+# Start the enhanced server with Web UI
+python run_web_ui.py
 
 # In another terminal, start an agent
 python -m remote_system.enhanced_agent.enhanced_agent
@@ -97,6 +98,17 @@ python -m remote_system.enhanced_agent.enhanced_agent
 # Access the web UI
 # Open browser: http://localhost:8080
 # Default credentials: admin / admin
+```
+
+### Send Your First Notification
+
+```bash
+# Send a popup message to client PC
+curl -u admin:admin -X POST http://localhost:8080/api/agents/AGENT_ID/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello from server!", "title": "Test Message"}'
+
+# Client will see a popup notification on their screen!
 ```
 
 ---
@@ -107,6 +119,7 @@ Comprehensive documentation is available:
 
 | Document | Description |
 |----------|-------------|
+| [🚀 Step-by-Step Guide](STEP_BY_STEP_GUIDE.md) | **START HERE** - Complete beginner-friendly guide with all commands |
 | [📖 Installation Guide](INSTALL.md) | Detailed installation instructions for all platforms |
 | [🎯 Usage Guide](USAGE.md) | Common operations and usage examples |
 | [🔌 API Reference](API.md) | Complete REST API endpoint documentation |

@@ -336,6 +336,92 @@ class RESTAPIServer:
                     'error': str(e)
                 }), 500
         
+        @self.app.route('/api/agents/<agent_id>/notify', methods=['POST'])
+        @self._require_auth
+        def send_notification(agent_id: str):
+            """
+            POST /api/agents/<agent_id>/notify - Send notification to agent
+            
+            Request body: {
+                "message": "text",
+                "title": "optional title",
+                "duration": 10,
+                "icon": "info|warning|error"
+            }
+            
+            Shows popup notification on client screen
+            """
+            try:
+                # Validate request
+                if not request.is_json:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Request must be JSON'
+                    }), 400
+                
+                data = request.get_json()
+                message = data.get('message')
+                title = data.get('title', 'Server Message')
+                duration = data.get('duration', 10)
+                icon = data.get('icon', 'info')
+                
+                if not message:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Missing message field'
+                    }), 400
+                
+                # Check if agent exists and is online
+                agent = self.core_server.db_manager.get_agent_by_id(agent_id)
+                if not agent:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Agent {agent_id} not found'
+                    }), 404
+                
+                if agent['status'] != 'online':
+                    return jsonify({
+                        'success': False,
+                        'error': f'Agent {agent_id} is {agent["status"]}'
+                    }), 400
+                
+                # Queue notification command
+                notification_command = {
+                    'plugin': 'notification',
+                    'action': 'show',
+                    'args': {
+                        'message': message,
+                        'title': title,
+                        'duration': duration,
+                        'icon': icon
+                    }
+                }
+                
+                result = self.core_server.broadcast_command(notification_command, [agent_id])
+                
+                if result.get(agent_id) == 'queued':
+                    return jsonify({
+                        'success': True,
+                        'message': 'Notification queued successfully',
+                        'agent_id': agent_id,
+                        'notification': {
+                            'title': title,
+                            'message': message,
+                            'duration': duration
+                        }
+                    }), 200
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to queue notification'
+                    }), 500
+            
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': str(e)
+                }), 500
+        
         @self.app.route('/api/health', methods=['GET'])
         def health_check():
             """Health check endpoint (no auth required)"""

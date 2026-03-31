@@ -655,3 +655,90 @@ command = {
 - Review [API.md](API.md) for complete API reference
 - Learn about [PLUGINS.md](PLUGINS.md) for custom plugin development
 - Follow [SECURITY.md](SECURITY.md) for security best practices
+
+
+## Notification Operations
+
+### Send Popup Notification to Client
+
+```python
+# Via Python API
+command = {
+    "plugin": "notification",
+    "action": "show",
+    "args": {
+        "message": "Hello from server!",
+        "title": "Server Message",
+        "duration": 10,  # seconds
+        "icon": "info"   # info, warning, or error
+    }
+}
+
+result = server.send_command(agent_id, command)
+if result.success:
+    print("Notification sent to client")
+```
+
+### Via REST API
+
+```bash
+# Send info notification
+curl -u admin:admin -X POST http://localhost:8080/api/agents/AGENT_ID/notify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "This is a test notification",
+    "title": "Hello from Server",
+    "duration": 10,
+    "icon": "info"
+  }'
+
+# Send warning notification
+curl -u admin:admin -X POST http://localhost:8080/api/agents/AGENT_ID/notify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Please check your system",
+    "title": "Warning",
+    "duration": 15,
+    "icon": "warning"
+  }'
+
+# Send error notification
+curl -u admin:admin -X POST http://localhost:8080/api/agents/AGENT_ID/notify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Critical error detected!",
+    "title": "Error",
+    "duration": 20,
+    "icon": "error"
+  }'
+```
+
+### Using Demo Script
+
+```bash
+# Run the notification demo
+python demo_notification.py
+
+# The script will:
+# 1. List all active agents
+# 2. Let you select an agent
+# 3. Send test notifications (info, warning, error)
+# 4. Client will see popup notifications on screen
+```
+
+### Notification Features
+
+- **Cross-platform**: Works on Windows, Linux, and macOS
+- **Icon types**: Info, Warning, Error
+- **Customizable duration**: Set how long notification stays visible
+- **Custom title and message**: Full control over notification content
+- **Non-intrusive**: Appears as system notification, doesn't block user
+
+### Example Use Cases
+
+1. **System Alerts**: Notify users about system maintenance or updates
+2. **Security Warnings**: Alert users about security issues
+3. **Task Completion**: Notify when long-running tasks complete
+4. **Reminders**: Send reminders to users
+5. **Broadcast Messages**: Send announcements to all connected clients
+
