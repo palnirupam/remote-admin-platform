@@ -264,29 +264,65 @@ Designed for high-performance deployments:
 
 ## 🛠️ Building Agents
 
-Create customized agent executables with the enhanced builder:
+Create customized agent executables (.bat and .exe) with the enhanced builder:
+
+### Basic Build
 
 ```bash
-# Build agent with custom configuration
+# Build both .bat and .exe files
 python remote_system/builder/enhanced_builder.py \
-    --server-ip 192.168.1.100 \
-    --server-port 9999 \
-    --output-dir ./builds \
+    --server 192.168.1.100:9999 \
+    --token YOUR_JWT_TOKEN
+
+# Output:
+# - enhanced_agent.bat (batch file)
+# - enhanced_agent.exe (executable)
+```
+
+### Build with Custom Configuration
+
+```bash
+# Build with custom icon and metadata
+python remote_system/builder/enhanced_builder.py \
+    --server 192.168.1.100:9999 \
+    --token YOUR_JWT_TOKEN \
     --icon custom_icon.ico \
     --company "Your Company" \
-    --version "1.0.0"
+    --version "1.0.0.0" \
+    --copyright "Copyright 2024"
 
-# Build with silent mode (no console window)
+# Icon must be .ico format for Windows
+# You can convert PNG/JPG to ICO using online tools or:
+# - https://convertio.co/png-ico/
+# - https://www.icoconverter.com/
+```
+
+### Build Options
+
+```bash
+# Silent mode (no console window)
 python remote_system/builder/enhanced_builder.py \
-    --server-ip example.com \
-    --server-port 9999 \
+    --server 192.168.1.100:9999 \
+    --token YOUR_JWT_TOKEN \
     --silent
 
-# Build for internet deployment with Ngrok
+# Build only .exe
 python remote_system/builder/enhanced_builder.py \
-    --server-ip https://abc123.ngrok.io \
-    --server-port 443
+    --server 192.168.1.100:9999 \
+    --token YOUR_JWT_TOKEN \
+    --format exe
+
+# Build for Ngrok
+python remote_system/builder/enhanced_builder.py \
+    --server https://abc123.ngrok.io \
+    --token YOUR_JWT_TOKEN
 ```
+
+**Requirements:** `pip install pyinstaller`
+
+**Output:** Files created in `remote_system/output/`
+
+**Get all options:** Run `python remote_system/builder/enhanced_builder.py -h` to see all available commands and examples
 
 See [Builder Documentation](remote_system/builder/README.md) for more options.
 
