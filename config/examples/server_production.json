@@ -1,0 +1,64 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 9999,
+    "use_tls": true,
+    "cert_file": "/opt/remote_system/certs/server.crt",
+    "key_file": "/opt/remote_system/certs/server.key",
+    "max_connections": 10000
+  },
+  "database": {
+    "type": "postgresql",
+    "host": "localhost",
+    "port": 5432,
+    "database": "remote_system",
+    "username": "remote_admin",
+    "password": "CHANGE_THIS_PASSWORD",
+    "pool_size": 50,
+    "max_overflow": 100
+  },
+  "authentication": {
+    "secret_key": "GENERATE_RANDOM_256_BIT_KEY_HERE",
+    "token_expiry": 3600,
+    "enable_token_refresh": true,
+    "max_token_age": 86400
+  },
+  "web_ui": {
+    "enabled": true,
+    "port": 8080,
+    "username": "admin",
+    "password": "CHANGE_THIS_PASSWORD",
+    "session_timeout": 3600,
+    "enable_2fa": false
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "/var/log/remote_system/server.log",
+    "max_size": 104857600,
+    "backup_count": 10,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "performance": {
+    "connection_pool_size": 50,
+    "command_queue_size": 100,
+    "max_concurrent_transfers": 3,
+    "screenshot_rate_limit": 5,
+    "enable_caching": true,
+    "cache_ttl": 5
+  },
+  "security": {
+    "enable_rate_limiting": true,
+    "max_failed_auth_attempts": 5,
+    "auth_lockout_duration": 300,
+    "enable_ip_whitelist": false,
+    "ip_whitelist": [],
+    "enable_certificate_pinning": true
+  },
+  "monitoring": {
+    "enable_metrics": true,
+    "metrics_port": 9090,
+    "enable_prometheus": true,
+    "enable_health_check": true,
+    "health_check_port": 8081
+  }
+}

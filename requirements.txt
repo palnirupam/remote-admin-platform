@@ -1,0 +1,26 @@
+# Core Web Framework
+Flask==3.0.0
+Flask-CORS==4.0.0
+
+# Database ORM
+SQLAlchemy>=2.0.36
+
+# Authentication & Security
+PyJWT==2.8.0
+cryptography==41.0.7
+
+# Image Processing
+Pillow>=11.0.0
+
+# Input Monitoring
+pynput==1.7.6
+
+# System Information
+psutil==5.9.6
+
+# Additional utilities
+python-dotenv==1.0.0
+
+# Testing
+pytest>=7.4.0
+hypothesis>=6.92.0

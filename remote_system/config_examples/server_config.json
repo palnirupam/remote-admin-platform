@@ -1,0 +1,19 @@
+{
+  "host": "0.0.0.0",
+  "port": 9999,
+  "db_path": "./data/remote_system.db",
+  "db_type": "sqlite",
+  "use_tls": true,
+  "token_expiry": 86400,
+  "max_agents": 1000,
+  "command_timeout": 300,
+  "heartbeat_interval": 60,
+  "heartbeat_timeout": 10,
+  "log_level": "INFO",
+  "web_ui_enabled": true,
+  "web_ui_port": 8080,
+  "web_ui_username": "admin",
+  "web_ui_password": "change-this-password",
+  "security_level": "medium",
+  "hot_reload_enabled": true
+}

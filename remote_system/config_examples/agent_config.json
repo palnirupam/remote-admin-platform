@@ -1,0 +1,21 @@
+{
+  "server_ip": "127.0.0.1",
+  "server_port": 9999,
+  "use_tls": true,
+  "cert_pinning_enabled": false,
+  "plugin_dir": "./plugins",
+  "enabled_plugins": ["file_transfer", "screenshot", "keylogger"],
+  "disabled_plugins": [],
+  "persistence_enabled": false,
+  "persistence_methods": ["auto"],
+  "reconnect_enabled": true,
+  "reconnect_delay_base": 5,
+  "reconnect_delay_max": 60,
+  "reconnect_attempts": -1,
+  "command_timeout": 300,
+  "heartbeat_timeout": 10,
+  "buffer_size": 4096,
+  "log_level": "INFO",
+  "security_level": "medium",
+  "hot_reload_enabled": true
+}

