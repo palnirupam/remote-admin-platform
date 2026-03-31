@@ -77,14 +77,37 @@ cd remote-admin-platform
 
 # Set up virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+
+# On Linux/macOS:
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run setup script
+# Run setup script (optional)
 python setup_environment.py
 ```
+
+### Platform-Specific Notes
+
+**Windows:**
+- Use `venv\Scripts\activate` to activate virtual environment
+- PowerShell may require: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+- Notifications use Windows toast notifications (built-in)
+
+**Linux:**
+- Use `source venv/bin/activate` to activate virtual environment
+- Notifications require `libnotify-bin`: `sudo apt install libnotify-bin`
+- May need to allow Python through firewall: `sudo ufw allow 9999`
+
+**macOS:**
+- Use `source venv/bin/activate` to activate virtual environment
+- Notifications use AppleScript (built-in)
+- May need to allow Python through firewall in System Preferences
 
 ### Quick Test
 
@@ -92,7 +115,11 @@ python setup_environment.py
 # Start the enhanced server with Web UI
 python run_web_ui.py
 
-# In another terminal, start an agent
+# In another terminal, activate venv first:
+# Windows: venv\Scripts\activate
+# Linux/macOS: source venv/bin/activate
+
+# Then start an agent
 python -m remote_system.enhanced_agent.enhanced_agent
 
 # Access the web UI
@@ -102,14 +129,29 @@ python -m remote_system.enhanced_agent.enhanced_agent
 
 ### Send Your First Notification
 
+**Get Agent ID first:**
 ```bash
-# Send a popup message to client PC
+curl -u admin:admin http://localhost:8080/api/agents
+```
+
+**Send notification (replace AGENT_ID with actual ID):**
+
+```bash
+# Linux/macOS:
 curl -u admin:admin -X POST http://localhost:8080/api/agents/AGENT_ID/notify \
   -H "Content-Type: application/json" \
   -d '{"message": "Hello from server!", "title": "Test Message"}'
 
-# Client will see a popup notification on their screen!
+# Windows PowerShell:
+curl -u admin:admin -X POST http://localhost:8080/api/agents/AGENT_ID/notify `
+  -H "Content-Type: application/json" `
+  -d '{\"message\": \"Hello from server!\", \"title\": \"Test Message\"}'
+
+# Windows CMD:
+curl -u admin:admin -X POST http://localhost:8080/api/agents/AGENT_ID/notify -H "Content-Type: application/json" -d "{\"message\": \"Hello from server!\", \"title\": \"Test Message\"}"
 ```
+
+**Client will see a popup notification on their screen!** 🔔
 
 ---
 
