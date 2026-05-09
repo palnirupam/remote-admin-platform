@@ -166,7 +166,10 @@ class PluginManager:
         except Exception as e:
             # Isolate plugin loading failures - don't crash the manager
             # Requirement 17.3: Isolate failures
-            pass
+            import logging
+            logging.getLogger(__name__).warning(
+                f"Failed to load plugin from {plugin_path}: {e}"
+            )
     
     def execute_plugin(self, plugin_name: str, args: Dict[str, Any]) -> PluginResult:
         """

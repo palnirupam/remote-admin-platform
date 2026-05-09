@@ -44,6 +44,7 @@ class AgentConnection:
         self.last_heartbeat = time.time()
         self.agent_info = agent_info
         self.lock = threading.Lock()
+        self.uninstalling = False  # Track if agent is currently uninstalling
 
 
 class EnhancedServer:
@@ -56,7 +57,7 @@ class EnhancedServer:
     
     def __init__(self, host: str = "0.0.0.0", port: int = 9999, 
                  db_path: str = "./remote_system.db", use_tls: bool = True,
-                 secret_key: str = "default_secret_key_change_in_production",
+                 secret_key: str = None,
                  legacy_mode: bool = True):
         """
         Initialize enhanced server
@@ -74,6 +75,13 @@ class EnhancedServer:
         self.host = host
         self.port = port
         self.use_tls = use_tls
+        
+        # Generate a secure random key if none provided
+        if secret_key is None:
+            import secrets
+            secret_key = secrets.token_hex(32)
+            print("[WARNING] No secret_key provided. Generated random key for this session.")
+            print("[WARNING] Set a persistent secret_key in config for production use.")
         self.secret_key = secret_key
         
         # Initialize components
@@ -321,6 +329,18 @@ class EnhancedServer:
                             status="pending"
                         )
                         
+                        # Check if this is an uninstall command
+                        is_uninstall = False
+                        try:
+                            if command.get("plugin") == "uninstall":
+                                is_uninstall = True
+                                # Mark agent as uninstalling
+                                with self.agents_lock:
+                                    if agent_id in self.active_agents:
+                                        self.active_agents[agent_id].uninstalling = True
+                        except Exception:
+                            pass
+                        
                         self._send_message(tls_conn, {"type": "COMMAND", "data": command})
                         
                         # Wait for result (5 minute timeout)
@@ -336,12 +356,43 @@ class EnhancedServer:
                                 compressed_result = self.compression_utils.compress_command_result(result)
                                 result_to_store = json.dumps(compressed_result)
                                 
+                                # is_uninstall already determined before command was sent (line 326-335)
+                                
+                                # Parse result to check for success
+                                result_success = False
+                                try:
+                                    if isinstance(result, dict):
+                                        result_success = result.get("success", False)
+                                    elif isinstance(result, str):
+                                        result_dict = json.loads(result)
+                                        result_success = result_dict.get("success", False)
+                                except Exception:
+                                    pass
+                                
+                                # Handle successful uninstall
+                                if is_uninstall and result_success:
+                                    self.db_manager.mark_agent_uninstalled(agent_id)
+                                    print(f"[UNINSTALL] Agent {agent_id} uninstalled successfully")
+                                    # Clear uninstalling flag
+                                    with self.agents_lock:
+                                        if agent_id in self.active_agents:
+                                            self.active_agents[agent_id].uninstalling = False
+                                
                                 self.db_manager.update_command_log(
                                     log_id=log_id,
                                     result=result_to_store,
                                     status="success",
                                     execution_time=end_time - start_time
                                 )
+                                
+                                # Update last_seen timestamp
+                                if is_uninstall:
+                                    # Agent will terminate after uninstall, update last_seen
+                                    try:
+                                        # The mark_agent_uninstalled already updates last_seen
+                                        pass
+                                    except Exception as e:
+                                        print(f"[ERROR] Failed to update last_seen for agent {agent_id}: {e}")
                             else:
                                 self.db_manager.update_command_log(
                                     log_id=log_id,
@@ -395,6 +446,22 @@ class EnhancedServer:
         finally:
             # Step 5: Cleanup
             if agent_id:
+                # Check if agent was uninstalling when connection closed
+                was_uninstalling = False
+                with self.agents_lock:
+                    if agent_id in self.active_agents:
+                        was_uninstalling = self.active_agents[agent_id].uninstalling
+                
+                # If agent terminated unexpectedly during uninstall, mark as unknown
+                if was_uninstalling:
+                    try:
+                        agent = self.db_manager.get_agent_by_id(agent_id)
+                        if agent and agent.get('status') != 'uninstalled':
+                            self.db_manager.update_agent_status(agent_id, "unknown")
+                            print(f"[UNINSTALL] Agent {agent_id} terminated unexpectedly during uninstall, status set to unknown")
+                    except Exception as e:
+                        print(f"[ERROR] Failed to update status for unexpectedly terminated agent {agent_id}: {e}")
+                
                 self._unregister_agent(agent_id)
             
             if tls_conn:
@@ -455,11 +522,13 @@ class EnhancedServer:
         Args:
             agent_id: Agent identifier to unregister
         
-        Requirements: 16.4, 19.4, 23.3, 23.7
+        Requirements: 16.4, 19.4, 23.3, 23.7, 10.7
         """
-        # Remove from active agents
+        # Requirement 10.7: Check if agent was uninstalling
+        was_uninstalling = False
         with self.agents_lock:
             if agent_id in self.active_agents:
+                was_uninstalling = self.active_agents[agent_id].uninstalling
                 del self.active_agents[agent_id]
         
         # Cleanup resource limiter
@@ -467,7 +536,12 @@ class EnhancedServer:
         
         # Update database status
         try:
-            self.db_manager.update_agent_status(agent_id, "offline")
+            # Requirement 10.7: Mark as "unknown" if disconnected during uninstall
+            if was_uninstalling:
+                self.db_manager.update_agent_status(agent_id, "unknown")
+                print(f"[WARNING] Agent {agent_id} disconnected during uninstall - status set to 'unknown'")
+            else:
+                self.db_manager.update_agent_status(agent_id, "offline")
         except Exception as e:
             print(f"[ERROR] Failed to update status for agent {agent_id}: {e}")
         
@@ -486,7 +560,7 @@ class EnhancedServer:
         Returns:
             Dictionary mapping agent_id to status
         
-        Requirements: 16.2, 23.7, 25.2, 25.3
+        Requirements: 16.2, 23.7, 25.2, 25.3, 10.7
         """
         results = {}
         
@@ -502,6 +576,12 @@ class EnhancedServer:
                 if self.resource_limiter.can_queue_command(agent_id):
                     if self.resource_limiter.queue_command(agent_id, command):
                         results[agent_id] = "queued"
+                        
+                        # Requirement 10.7: Set uninstalling flag for uninstall commands
+                        if command.get('plugin') == 'uninstall' and command.get('action') == 'execute':
+                            if agent_id in self.active_agents:
+                                self.active_agents[agent_id].uninstalling = True
+                                print(f"[INFO] Agent {agent_id} marked as uninstalling")
                     else:
                         results[agent_id] = "queue_full"
                 else:

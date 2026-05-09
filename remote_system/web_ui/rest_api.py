@@ -28,7 +28,7 @@ class RESTAPIServer:
     """
     
     def __init__(self, core_server, port: int = 8080, 
-                 web_username: str = "admin", web_password: str = "admin"):
+                 web_username: str = "admin", web_password: str = None):
         """
         Initialize REST API server
         
@@ -43,6 +43,13 @@ class RESTAPIServer:
         self.core_server = core_server
         self.port = port
         self.web_username = web_username
+        
+        # Generate a secure random password if none provided
+        if web_password is None:
+            import secrets
+            web_password = secrets.token_urlsafe(16)
+            print(f"[WARNING] No web_password provided. Generated: {web_password}")
+            print("[WARNING] Set a persistent password in config for production use.")
         self.web_password = web_password
         
         # Create Flask app
@@ -62,7 +69,8 @@ class RESTAPIServer:
         @self.app.route('/')
         def index():
             """Serve the main web UI page"""
-            return send_from_directory('static', 'index.html')
+            static_dir = os.path.join(os.path.dirname(__file__), 'static')
+            return send_from_directory(static_dir, 'index.html')
         
         @self.app.route('/<path:path>')
         def serve_static(path):
@@ -422,6 +430,101 @@ class RESTAPIServer:
                     'error': str(e)
                 }), 500
         
+        @self.app.route('/api/agents/<agent_id>/uninstall', methods=['POST'])
+        @self._require_auth
+        def uninstall_agent(agent_id: str):
+            """
+            POST /api/agents/<agent_id>/uninstall - Uninstall agent with password verification
+            
+            Request body: {"password": "string"}
+            
+            Returns:
+                200: Command queued successfully
+                400: Agent offline or invalid request
+                404: Agent not found
+                500: Internal error
+            
+            Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8
+            """
+            try:
+                # Validate request is JSON format
+                if not request.is_json:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Request must be JSON'
+                    }), 400
+                
+                # Extract password from request body
+                data = request.get_json()
+                password = data.get('password')
+                
+                # Validate password field exists
+                if password is None:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Missing password field'
+                    }), 400
+                
+                # Query agent from database using agent_id
+                agent = self.core_server.db_manager.get_agent_by_id(agent_id)
+                
+                # Return HTTP 404 if agent not found
+                if not agent:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Agent {agent_id} not found'
+                    }), 404
+                
+                # Check if agent is a legacy agent (not supported for uninstall)
+                if agent_id.startswith("legacy_"):
+                    return jsonify({
+                        'success': False,
+                        'error': 'Uninstall feature is not supported for legacy agents. Please upgrade the agent to use this feature.'
+                    }), 400
+                
+                # Return HTTP 400 if agent status is not "online"
+                if agent['status'] != 'online':
+                    return jsonify({
+                        'success': False,
+                        'error': f'Agent {agent_id} is {agent["status"]}, must be online to uninstall'
+                    }), 400
+                
+                # Queue uninstall command to server with password
+                uninstall_command = {
+                    'plugin': 'uninstall',
+                    'action': 'execute',
+                    'args': {
+                        'password': password
+                    }
+                }
+                
+                result = self.core_server.broadcast_command(uninstall_command, [agent_id])
+                
+                # Return HTTP 200 with success message on successful queuing
+                if result.get(agent_id) == 'queued':
+                    return jsonify({
+                        'success': True,
+                        'message': 'Uninstall command queued successfully',
+                        'agent_id': agent_id
+                    }), 200
+                else:
+                    # Return HTTP 500 if command queuing fails
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to queue uninstall command'
+                    }), 500
+            
+            except Exception as e:
+                # Requirement 10.5: Don't expose password in error responses
+                error_msg = str(e)
+                # Sanitize error message to remove any potential password exposure
+                if password and password in error_msg:
+                    error_msg = error_msg.replace(password, '[REDACTED]')
+                return jsonify({
+                    'success': False,
+                    'error': error_msg
+                }), 500
+        
         @self.app.route('/api/health', methods=['GET'])
         def health_check():
             """Health check endpoint (no auth required)"""
@@ -447,13 +550,13 @@ class RESTAPIServer:
                 return jsonify({
                     'success': False,
                     'error': 'Authentication required'
-                }), 401, {'WWW-Authenticate': 'Basic realm="Login Required"'}
+                }), 401
             
             if auth.username != self.web_username or auth.password != self.web_password:
                 return jsonify({
                     'success': False,
                     'error': 'Invalid credentials'
-                }), 401, {'WWW-Authenticate': 'Basic realm="Login Required"'}
+                }), 401
             
             return f(*args, **kwargs)
         

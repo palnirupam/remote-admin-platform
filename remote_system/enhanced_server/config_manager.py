@@ -329,6 +329,14 @@ class ConfigManager:
             
             if not self.config.web_ui_password:
                 errors.append("web_ui_password cannot be empty when web UI is enabled")
+            
+            # Warn about default/weak passwords
+            weak_passwords = ["admin", "password", "123456", "12345678", "root", "test"]
+            if self.config.web_ui_password and self.config.web_ui_password in weak_passwords:
+                logger.warning(
+                    "SECURITY WARNING: Web UI password is weak/default. "
+                    "Change it for production use."
+                )
         
         # Validate security level
         valid_security_levels = [level.value for level in SecurityLevel]

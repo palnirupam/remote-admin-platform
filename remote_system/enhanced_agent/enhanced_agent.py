@@ -345,6 +345,39 @@ class EnhancedAgent:
             self.reconnect_delay = min(self.reconnect_delay * 2, self.max_reconnect_delay)
             return False
     
+    def _validate_uninstall_command(self, command: Dict[str, Any]) -> Optional[str]:
+        """
+        Validate uninstall command structure
+        
+        Requirements:
+        - 9.1: Validate uninstall command has plugin="uninstall"
+        - 9.2: Validate uninstall command has action="execute"
+        - 9.3: Validate uninstall command has args object with password field
+        
+        Args:
+            command: Command dictionary to validate
+            
+        Returns:
+            Error message if validation fails, None if valid
+        """
+        # Requirement 9.1: Validate plugin="uninstall"
+        if command.get("plugin") != "uninstall":
+            return "Invalid uninstall command: plugin must be 'uninstall'"
+        
+        # Requirement 9.2: Validate action="execute"
+        if command.get("action") != "execute":
+            return "Invalid uninstall command: action must be 'execute'"
+        
+        # Requirement 9.3: Validate args object with password field
+        args = command.get("args")
+        if not isinstance(args, dict):
+            return "Invalid uninstall command: args must be an object"
+        
+        if "password" not in args:
+            return "Invalid uninstall command: args must contain password field"
+        
+        return None
+    
     def _handle_command(self, command: Dict[str, Any]) -> None:
         """
         Handle command execution via plugin manager
@@ -352,10 +385,11 @@ class EnhancedAgent:
         Args:
             command: Command dictionary with plugin name and arguments
         
-        Requirements: 4.1, 20.7
+        Requirements: 4.1, 20.7, 9.1, 9.2, 9.3
         """
         try:
             plugin_name = command.get("plugin")
+            action = command.get("action")
             args = command.get("args", {})
             
             if not plugin_name:
@@ -364,16 +398,36 @@ class EnhancedAgent:
                     "error": "No plugin specified"
                 }
             else:
-                # Execute plugin
-                plugin_result = self.plugin_manager.execute_plugin(plugin_name, args)
-                
-                # Convert PluginResult to dictionary
-                result = {
-                    "success": plugin_result.success,
-                    "data": plugin_result.data,
-                    "error": plugin_result.error,
-                    "metadata": plugin_result.metadata
-                }
+                # Requirement 9.1, 9.2, 9.3: Validate uninstall command structure
+                if plugin_name == "uninstall":
+                    validation_error = self._validate_uninstall_command(command)
+                    if validation_error:
+                        result = {
+                            "success": False,
+                            "error": validation_error
+                        }
+                    else:
+                        # Execute plugin
+                        plugin_result = self.plugin_manager.execute_plugin(plugin_name, args)
+                        
+                        # Convert PluginResult to dictionary
+                        result = {
+                            "success": plugin_result.success,
+                            "data": plugin_result.data,
+                            "error": plugin_result.error,
+                            "metadata": plugin_result.metadata
+                        }
+                else:
+                    # Execute plugin
+                    plugin_result = self.plugin_manager.execute_plugin(plugin_name, args)
+                    
+                    # Convert PluginResult to dictionary
+                    result = {
+                        "success": plugin_result.success,
+                        "data": plugin_result.data,
+                        "error": plugin_result.error,
+                        "metadata": plugin_result.metadata
+                    }
             
             # Send result back to server
             result_message = {
@@ -480,7 +534,8 @@ class EnhancedAgent:
             hostname = "unknown"
         
         try:
-            username = platform.system()  # Simplified for now
+            import getpass
+            username = getpass.getuser()
         except Exception:
             username = "unknown"
         
